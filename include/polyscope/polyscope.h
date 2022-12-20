@@ -9,7 +9,7 @@
 #include "polyscope/structure.h"
 #include "polyscope/utilities.h"
 #include "polyscope/widget.h"
-
+#include "polyscope/transformation_gizmo.h"
 #include "imgui.h"
 
 #include <functional>
@@ -27,6 +27,12 @@ class Structure;
 // program. If initialization fails in any way, an exception will be thrown.
 // The backend string sets which rendering backend to use. If "", a reasonable default backend will be chosen.
 void init(std::string backend = "");
+
+// Check that polyscope has been initialized. If not, an exception is thrown to prevent further problems.
+void checkInitialized();
+
+// Returns a bool indicating whether or not polyscope has been initialized
+bool isInitialized();
 
 // Give control to the polyscope GUI. Blocks until the user returns control via
 // the GUI, possibly by exiting the window.
@@ -57,8 +63,15 @@ extern std::tuple<glm::vec3, glm::vec3> boundingBox;
 extern std::set<Widget*> widgets;
 extern std::vector<SlicePlane*> slicePlanes;
 
+// should we allow default trackball mouse camera interaction? 
+// Needs more interactions on when to turn this on/off
+extern bool doDefaultMouseInteraction;
+
 // a callback function used to render a "user" gui
 extern std::function<void()> userCallback;
+
+
+
 
 // representative center for all registered structures
 glm::vec3 center();
