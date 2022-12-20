@@ -67,10 +67,10 @@ public:
   SurfaceMesh(std::string name, const std::vector<glm::vec3>& vertexPositions,
               const std::vector<std::vector<size_t>>& faceIndices);
 
-  template <typename Hasher>
+  template <typename H, typename HT>
   SurfaceMesh(std::string name, const std::vector<glm::vec3>& vertexPositions,
               const std::vector<std::vector<size_t>>& faceIndices,
-              const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds);
+              const std::unordered_map<std::pair<HT, HT>, HT, H>& edgeInds);
 
   // Build the imgui display
   virtual void buildCustomUI() override;
@@ -241,8 +241,8 @@ public:
 
   // = Mesh helpers
   void computeCounts(); // call to populate counts and indices
-  template <typename Hasher>
-  void computeCounts(const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds);
+  template <typename H, typename HT>
+  void computeCounts(const std::unordered_map<std::pair<HT, HT>, HT, H>& edgeInds);
   void computeGeometryData(); // call to populate normals/areas/lengths
   void ensureHaveManifoldConnectivity();
   glm::vec3 faceCenter(size_t iF);
@@ -393,9 +393,9 @@ private:
 // Register functions
 template <class V, class F>
 SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, const F& faceIndices);
-template <class V, class F, typename Hasher>
+template <class V, class F, typename H, typename HT>
 SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, const F& faceIndices,
-                                 const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds);
+                                 const std::unordered_map<std::pair<HT, HT>, HT, H>& edgeInds);
 template <class V, class F>
 SurfaceMesh* registerSurfaceMesh2D(std::string name, const V& vertexPositions, const F& faceIndices);
 template <class V, class F, class P>

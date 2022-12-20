@@ -1,10 +1,10 @@
 // Copyright 2017-2019, Nicholas Sharp and the Polyscope contributors. http://polyscope.run.
 namespace polyscope {
 
-template <typename Hasher>
+template <typename H, typename HT>
 SurfaceMesh::SurfaceMesh(std::string name, const std::vector<glm::vec3>& vertexPositions,
                          const std::vector<std::vector<size_t>>& faceIndices,
-                         const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds)
+                         const std::unordered_map<std::pair<HT, HT>, HT, H>& edgeInds)
     : QuantityStructure<SurfaceMesh>(name, typeName()), vertices(vertexPositions), faces(faceIndices),
       shadeSmooth(uniquePrefix() + "shadeSmooth", false),
       surfaceColor(uniquePrefix() + "surfaceColor", getNextUniqueColor()),
@@ -22,7 +22,7 @@ SurfaceMesh::SurfaceMesh(std::string name, const std::vector<glm::vec3>& vertexP
 template <class V, class F>
 SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, const F& faceIndices) {
   checkInitialized();
-  
+
   SurfaceMesh* s = new SurfaceMesh(name, standardizeVectorArray<glm::vec3, 3>(vertexPositions),
                                    standardizeNestedList<size_t, F>(faceIndices));
   bool success = registerStructure(s);
@@ -33,9 +33,9 @@ SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, con
   return s;
 }
 
-template <class V, class F, typename Hasher>
+template <class V, class F, typename H, typename HT>
 SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, const F& faceIndices,
-                                 const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds) {
+                                 const std::unordered_map<std::pair<HT, HT>, HT, H>& edgeInds) {
   checkInitialized();
 
   SurfaceMesh* s = new SurfaceMesh(name, standardizeVectorArray<glm::vec3, 3>(vertexPositions),
@@ -71,7 +71,7 @@ template <class V, class F, class P>
 SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, const F& faceIndices,
                                  const std::array<std::pair<P, size_t>, 5>& perms) {
   checkInitialized();
-  
+
   SurfaceMesh* s = registerSurfaceMesh(name, vertexPositions, faceIndices);
 
   if (s) {
@@ -476,8 +476,8 @@ SurfaceOneFormIntrinsicVectorQuantity* SurfaceMesh::addOneFormIntrinsicVectorQua
                                                standardizeArray<char, O>(orientations));
 }
 
-template <typename Hasher>
-void SurfaceMesh::computeCounts(const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds) {
+template <typename H, typename HT>
+void SurfaceMesh::computeCounts(const std::unordered_map<std::pair<HT, HT>, HT, H>& edgeInds) {
   nFacesTriangulationCount = 0;
   nCornersCount = 0;
   nEdgesCount = edgeInds.size();
