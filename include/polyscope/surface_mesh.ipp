@@ -1,6 +1,23 @@
 // Copyright 2017-2019, Nicholas Sharp and the Polyscope contributors. http://polyscope.run.
 namespace polyscope {
 
+template <typename Hasher>
+SurfaceMesh::SurfaceMesh(std::string name, const std::vector<glm::vec3>& vertexPositions,
+                         const std::vector<std::vector<size_t>>& faceIndices,
+                         const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds)
+    : QuantityStructure<SurfaceMesh>(name, typeName()), vertices(vertexPositions), faces(faceIndices),
+      shadeSmooth(uniquePrefix() + "shadeSmooth", false),
+      surfaceColor(uniquePrefix() + "surfaceColor", getNextUniqueColor()),
+      edgeColor(uniquePrefix() + "edgeColor", glm::vec3{0., 0., 0.}), material(uniquePrefix() + "material", "clay"),
+      edgeWidth(uniquePrefix() + "edgeWidth", 0.),
+      backFacePolicy(uniquePrefix() + "backFacePolicy", BackFacePolicy::Different),
+      backFaceColor(uniquePrefix() + "backFaceColor",
+                    glm::vec3(1.f - surfaceColor.get().r, 1.f - surfaceColor.get().g, 1.f - surfaceColor.get().b)) {
+  updateObjectSpaceBounds();
+  computeCounts(edgeInds);
+  computeGeometryData();
+}
+
 // Shorthand to add a mesh to polyscope
 template <class V, class F>
 SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, const F& faceIndices) {
@@ -15,6 +32,22 @@ SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, con
 
   return s;
 }
+
+template <class V, class F, typename Hasher>
+SurfaceMesh* registerSurfaceMesh(std::string name, const V& vertexPositions, const F& faceIndices,
+                                 const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds) {
+  checkInitialized();
+
+  SurfaceMesh* s = new SurfaceMesh(name, standardizeVectorArray<glm::vec3, 3>(vertexPositions),
+                                   standardizeNestedList<size_t, F>(faceIndices), edgeInds);
+  bool success = registerStructure(s);
+  if (!success) {
+    safeDelete(s);
+  }
+
+  return s;
+}
+
 template <class V, class F>
 SurfaceMesh* registerSurfaceMesh2D(std::string name, const V& vertexPositions, const F& faceIndices) {
   checkInitialized();
@@ -443,6 +476,69 @@ SurfaceOneFormIntrinsicVectorQuantity* SurfaceMesh::addOneFormIntrinsicVectorQua
                                                standardizeArray<char, O>(orientations));
 }
 
+template <typename Hasher>
+void SurfaceMesh::computeCounts(const std::unordered_map<std::pair<size_t, size_t>, size_t, Hasher>& edgeInds) {
+  nFacesTriangulationCount = 0;
+  nCornersCount = 0;
+  nEdgesCount = edgeInds.size();
+  edgeIndices.resize(nFaces());
+  halfedgeIndices.resize(nFaces());
+
+  size_t iF = 0;
+  for (auto& face : faces) {
+    if (face.size() < 3) {
+      warning(name + " has face with degree < 3!");
+      face = {0, 0, 0}; // (just to do _something_ so we don't crash in subsequent code)
+    }
+    nFacesTriangulationCount += std::max(static_cast<int>(face.size()) - 2, 0);
+    edgeIndices[iF].resize(face.size());
+    halfedgeIndices[iF].resize(face.size());
+
+    for (size_t i = 0; i < face.size(); i++) {
+      size_t vA = face[i];
+      size_t vB = face[(i + 1) % face.size()];
+
+      if (vA >= vertices.size()) {
+        warning(name + " has face with vertex index out of vertices range",
+                "face " + std::to_string(iF) + " has vertex index " + std::to_string(vA));
+
+        // zero out the face index
+        // (just to do _something_ so we don't crash in subsequent code)
+        for (size_t j = 0; j < face.size(); j++) {
+          face[j] = 0;
+        }
+        vA = face[i];
+        vB = face[(i + 1) % face.size()];
+      }
+
+      // try with vA->vB
+      std::pair<size_t, size_t> edgeKey;
+      edgeKey.first = vA;
+      edgeKey.second = vB;
+      auto it = edgeInds.find(edgeKey);
+      if (it == edgeInds.end()) {
+        // try with vB->vA
+        edgeKey.first = vB;
+        edgeKey.second = vA;
+        it = edgeInds.find(edgeKey);
+        if (it == edgeInds.end()) {
+          error(name + " missing edge in the input edge map!");
+        }
+      }
+      edgeIndices[iF][i] = it->second;
+      halfedgeIndices[iF][i] = nCornersCount++;
+    }
+
+    iF++;
+  }
+
+  // Default data sizes
+  vertexDataSize = nVertices();
+  faceDataSize = nFaces();
+  edgeDataSize = nEdges();
+  halfedgeDataSize = nHalfedges();
+  cornerDataSize = nCorners();
+}
 
 template <class T>
 void SurfaceMesh::setVertexTangentBasisX(const T& vectors) {

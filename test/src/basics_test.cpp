@@ -240,16 +240,62 @@ std::tuple<std::vector<glm::vec3>, std::vector<std::vector<size_t>>> getTriangle
   return std::tuple<std::vector<glm::vec3>, std::vector<std::vector<size_t>>>{points, faces};
 };
 
-polyscope::SurfaceMesh* registerTriangleMesh(std::string name = "test1") {
+struct EdgeHasher {
+  // www.techiedelight.com/use-std-pair-key-std-unordered_map-cpp/
+  template <class T>
+  inline std::size_t operator()(const std::pair<T, T>& e_key) const {
+    return std::hash<T>()(e_key.first * 8191 + e_key.second * 11003);
+  }
+};
+
+inline std::pair<size_t, size_t> EdgeKey(const size_t v0, const size_t v1) {
+  size_t i = std::max(v0, v1);
+  size_t j = std::min(v0, v1);
+  return std::make_pair(i, j);
+}
+
+std::unordered_map<std::pair<size_t, size_t>, size_t, EdgeHasher>
+getEdgeMap(const std::vector<std::vector<size_t>>& faces) {
+  std::unordered_map<std::pair<size_t, size_t>, size_t, EdgeHasher> eMap;
+  for (auto& face : faces) {
+    for (size_t i = 0; i < face.size(); i++) {
+      size_t vA = face[i];
+      size_t vB = face[(i + 1) % face.size()];
+      auto key = EdgeKey(vA, vB);
+      if (eMap.find(key) == eMap.end()) {
+        eMap.insert({key, eMap.size()});
+      }
+    }
+  }
+  return eMap;
+}
+
+polyscope::SurfaceMesh* registerTriangleMesh(std::string name = "test1", bool withEdgeMap = false) {
   std::vector<glm::vec3> points;
   std::vector<std::vector<size_t>> faces;
   std::tie(points, faces) = getTriangleMesh();
-  return polyscope::registerSurfaceMesh(name, points, faces);
+  if (withEdgeMap) {
+    auto edgeMap = getEdgeMap(faces);
+    return polyscope::registerSurfaceMesh(name, points, faces, edgeMap);
+  } else {
+    return polyscope::registerSurfaceMesh(name, points, faces);
+  }
 }
 
 
 TEST_F(PolyscopeTest, ShowSurfaceMesh) {
   auto psMesh = registerTriangleMesh();
+
+  // Make sure we actually added the mesh
+  polyscope::show(3);
+  EXPECT_TRUE(polyscope::hasSurfaceMesh("test1"));
+  EXPECT_FALSE(polyscope::hasSurfaceMesh("test2"));
+  polyscope::removeAllStructures();
+  EXPECT_FALSE(polyscope::hasSurfaceMesh("test1"));
+}
+
+TEST_F(PolyscopeTest, ShowSurfaceMeshWithInputEdgeMap) {
+  auto psMesh = registerTriangleMesh("test1", true);
 
   // Make sure we actually added the mesh
   polyscope::show(3);
@@ -1078,7 +1124,7 @@ TEST_F(PolyscopeTest, SlicePlaneTest) {
   polyscope::show(3);
   psPoints->setCullWholeElements(false);
   polyscope::show(3);
-  
+
   polyscope::show(3);
 
   // add another and rotate it
