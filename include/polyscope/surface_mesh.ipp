@@ -480,7 +480,7 @@ template <typename H, typename HT>
 void SurfaceMesh::computeCounts(const std::unordered_map<std::pair<HT, HT>, HT, H>& edgeInds) {
   nFacesTriangulationCount = 0;
   nCornersCount = 0;
-  nEdgesCount = edgeInds.size();
+  nEdgesCount = 0;
   edgeIndices.resize(nFaces());
   halfedgeIndices.resize(nFaces());
 
@@ -526,6 +526,7 @@ void SurfaceMesh::computeCounts(const std::unordered_map<std::pair<HT, HT>, HT, 
         }
       }
       edgeIndices[iF][i] = it->second;
+      nEdgesCount = std::max(nEdgesCount, size_t(it->second + 1));
       halfedgeIndices[iF][i] = nCornersCount++;
     }
 
