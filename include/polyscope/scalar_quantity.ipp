@@ -156,10 +156,10 @@ QuantityT* ScalarQuantity<QuantityT>::setMapRange(std::pair<double, double> val)
   requestRedraw();
   return &quantity;
 }
-template <typename QuantityT>
-std::pair<double, double> ScalarQuantity<QuantityT>::getMapRange() {
-  return vizRange;
-}
+//template <typename QuantityT>
+//std::pair<double, double> ScalarQuantity<QuantityT>::getMapRange() {
+//  return vizRange;
+//}
 
 template <typename QuantityT>
 QuantityT* ScalarQuantity<QuantityT>::setIsolineWidth(double size, bool isRelative) {
