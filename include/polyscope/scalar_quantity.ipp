@@ -361,14 +361,6 @@ QuantityT* ScalarQuantity<QuantityT>::setMapRange(std::pair<double, double> val)
   requestRedraw();
   return &quantity;
 }
-template <typename QuantityT>
-std::pair<double, double> ScalarQuantity<QuantityT>::getMapRange() {
-  return std::pair<float, float>(vizRangeMin.get(), vizRangeMax.get());
-}
-template <typename QuantityT>
-std::pair<double, double> ScalarQuantity<QuantityT>::getDataRange() {
-  return dataRange;
-}
 
 template <typename QuantityT>
 QuantityT* ScalarQuantity<QuantityT>::setIsolinePeriod(double size, bool isRelative) {

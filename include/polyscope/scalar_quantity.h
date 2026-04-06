@@ -51,9 +51,13 @@ public:
 
   // Data limits mapped in to colormap
   QuantityT* setMapRange(std::pair<double, double> val);
-  std::pair<double, double> getMapRange();
+  std::pair<double, double> getMapRange(){
+	  return std::pair<double, double>(vizRangeMin.get(), vizRangeMax.get());
+  }
   QuantityT* resetMapRange(); // reset to full range
-  std::pair<double, double> getDataRange();
+  std::pair<double, double> getDataRange(){
+	  return dataRange;
+  }
 
   // Color bar options (it is always displayed inline in the structures panel)
   QuantityT* setOnscreenColorbarEnabled(bool newEnabled);
