@@ -11,6 +11,8 @@
 #include "polyscope/scaled_value.h"
 #include "polyscope/standardize_data_array.h"
 
+#include <utility>
+
 namespace polyscope {
 
 // Encapsulates logic which is common to all scalar quantities
@@ -50,14 +52,11 @@ public:
   std::string getColorMap();
 
   // Data limits mapped in to colormap
-  QuantityT* setMapRange(std::pair<double, double> val);
-  std::pair<double, double> getMapRange(){
-	  return std::pair<double, double>(vizRangeMin.get(), vizRangeMax.get());
-  }
+  using ScalarRange = std::pair<double, double>;
+  QuantityT* setMapRange(ScalarRange val);
+  ScalarRange getMapRange();
   QuantityT* resetMapRange(); // reset to full range
-  std::pair<double, double> getDataRange(){
-	  return dataRange;
-  }
+  ScalarRange getDataRange();
 
   // Color bar options (it is always displayed inline in the structures panel)
   QuantityT* setOnscreenColorbarEnabled(bool newEnabled);
